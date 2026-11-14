@@ -1,7 +1,6 @@
 """
 Web scraping and URL parsing utilities for BYOD Productivity Logger.
-Extracts HTML meta-tags (title, description) or extracts normalized lexical tokens
-from raw URLs to prepare inputs for NLP classification.
+Extracts HTML meta-tags or normalized lexical tokens for NLP classification.
 """
 
 import re
@@ -16,41 +15,73 @@ USER_AGENT = (
 
 REQUEST_TIMEOUT_SECONDS = 5
 
+GENERIC_DESCRIPTIONS = (
+    "enjoy the videos and music you love",
+    "upload original content, and share it all",
+    "before you continue to youtube",
+)
+
+
+def _fetch_youtube_metadata(url: str) -> Optional[str]:
+    """Retrieves video title and author via public oEmbed endpoint."""
+    try:
+        encoded = requests.utils.quote(url)
+        oembed_url = f"https://www.youtube.com/oembed?url={encoded}&format=json"
+        response = requests.get(oembed_url, timeout=REQUEST_TIMEOUT_SECONDS)
+        if response.status_code == 200:
+            data = response.json()
+            title = data.get("title", "").strip()
+            author = data.get("author_name", "").strip()
+            if title:
+                return f"{title} {author}".strip()
+    except Exception:
+        pass
+    return None
+
 
 def extract_meta_data(url: str) -> Optional[str]:
-    """
-    Attempts to fetch the target URL and extract its meta description or title.
-    Returns the extracted text, or None if the request fails or content is absent.
-    """
+    """Fetches target URL and extracts title and descriptive metadata."""
+    # YouTube specific handler
+    if "youtube.com" in url or "youtu.be" in url:
+        yt_meta = _fetch_youtube_metadata(url)
+        if yt_meta:
+            return yt_meta
+
     headers = {"User-Agent": USER_AGENT}
     try:
         response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT_SECONDS)
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, "html.parser")
 
-            # 1. Attempt to extract Meta Description
-            meta_tag = soup.find("meta", attrs={"name": "description"})
-            if meta_tag and meta_tag.get("content"):
-                content = meta_tag["content"].strip()
-                if content:
-                    return content
-
-            # 2. Fall back to OpenGraph Description
-            og_meta = soup.find("meta", attrs={"property": "og:description"})
-            if og_meta and og_meta.get("content"):
-                content = og_meta["content"].strip()
-                if content:
-                    return content
-
-            # 3. Fall back to Page Title
+            # Extract title
+            title_text = ""
             title_tag = soup.find("title")
             if title_tag and title_tag.text:
-                content = title_tag.text.strip()
-                if content:
-                    return content
+                title_text = title_tag.text.strip()
+
+            og_title = soup.find("meta", attrs={"property": "og:title"})
+            if og_title and og_title.get("content"):
+                title_text = og_title["content"].strip()
+
+            # Extract description
+            desc_text = ""
+            meta_desc = soup.find("meta", attrs={"name": "description"})
+            if meta_desc and meta_desc.get("content"):
+                candidate = meta_desc["content"].strip()
+                if not any(g in candidate.lower() for g in GENERIC_DESCRIPTIONS):
+                    desc_text = candidate
+
+            if not desc_text:
+                og_desc = soup.find("meta", attrs={"property": "og:description"})
+                if og_desc and og_desc.get("content"):
+                    candidate = og_desc["content"].strip()
+                    if not any(g in candidate.lower() for g in GENERIC_DESCRIPTIONS):
+                        desc_text = candidate
+
+            combined = f"{title_text} {desc_text}".strip()
+            return combined if combined else None
 
     except requests.exceptions.RequestException:
-        # Failed to fetch or connection timed out, fallback to URL lexical tokens
         return None
     except Exception:
         return None
@@ -59,10 +90,7 @@ def extract_meta_data(url: str) -> Optional[str]:
 
 
 def extract_text_from_url(url: str) -> str:
-    """
-    Extracts meaningful words from a raw URL string by stripping protocol,
-    www subdomain, top-level domain patterns, and punctuation.
-    """
+    """Extracts alphanumeric tokens from a URL string."""
     clean = url.lower()
     clean = re.sub(r"^https?://", "", clean)
     clean = re.sub(r"^www\.", "", clean)
@@ -72,11 +100,8 @@ def extract_text_from_url(url: str) -> str:
 
 if __name__ == "__main__":
     test_urls = [
+        "https://www.youtube.com/watch?v=1L420xXpDTg",
         "https://www.github.com",
-        "https://www.youtube.com/wwe",
-        "https://en.wikipedia.org/wiki/Machine_learning"
     ]
     for u in test_urls:
-        print(f"\nURL: {u}")
-        print(f"Meta Extracted: {extract_meta_data(u)}")
-        print(f"Token Extracted: {extract_text_from_url(u)}")
+        print(f"URL: {u} -> Meta: {extract_meta_data(u)}")

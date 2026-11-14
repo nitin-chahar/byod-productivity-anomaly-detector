@@ -1,20 +1,48 @@
 """
 Flask REST API Server for BYOD Productivity Logger.
-Provides endpoints for client applications and browser extensions to log student
-browsing activity and trigger real-time ML classification.
+Provides endpoints for client applications, browser dashboards, and extensions to:
+- Log student browsing activity and trigger real-time ML classification
+- Query live metrics and activity logs
+- Inspect real-time anomaly detection outputs
+- Test SMTP email alerting connectivity
+- Trigger automated simulation batches
 """
 
+import csv
 import logging
 import os
+from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 try:
-    from backend.config import API_DEBUG, API_HOST, API_PORT, FRONTEND_DIR
+    from backend.config import (
+        API_DEBUG,
+        API_HOST,
+        API_PORT,
+        ALERT_THRESHOLD,
+        FRONTEND_DIR,
+        STUDENT_ACTIVITY_LOG,
+        REAL_TIME_ANOMALIES_LOG,
+        SENDER_EMAIL,
+        SENDER_PASSWORD,
+    )
     from backend.logging_handler import log_visit
+    from backend.send_alert import test_smtp_connection
 except ImportError:
-    from config import API_DEBUG, API_HOST, API_PORT, FRONTEND_DIR
+    from config import (
+        API_DEBUG,
+        API_HOST,
+        API_PORT,
+        ALERT_THRESHOLD,
+        FRONTEND_DIR,
+        STUDENT_ACTIVITY_LOG,
+        REAL_TIME_ANOMALIES_LOG,
+        SENDER_EMAIL,
+        SENDER_PASSWORD,
+    )
     from logging_handler import log_visit
+    from send_alert import test_smtp_connection
 
 # Configure logging
 logging.basicConfig(
@@ -24,7 +52,6 @@ logging.basicConfig(
 logger = logging.getLogger("BYOD.Server")
 
 app = Flask(__name__, static_folder=str(FRONTEND_DIR), static_url_path="")
-# Enable CORS for all routes (allows frontend browser dashboard or extensions to interact with API)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 
@@ -45,10 +72,136 @@ def index():
 @app.route("/api/health", methods=["GET"])
 def health_check():
     """Health check route returning system status."""
+    active_sender = os.environ.get("SMTP_SENDER_EMAIL", SENDER_EMAIL or "")
+    active_pwd = os.environ.get("SMTP_APP_PASSWORD", SENDER_PASSWORD or "")
+    smtp_ready = bool(active_sender and active_pwd)
+
     return jsonify({
         "status": "online",
-        "service": "BYOD Productivity Logger API",
-        "version": "1.0.0"
+        "service": "BYOD Sentinel Productivity API",
+        "version": "1.0.0",
+        "smtp_configured": smtp_ready,
+        "sender_email": active_sender if smtp_ready else None,
+        "alert_threshold_seconds": ALERT_THRESHOLD
+    }), 200
+
+
+@app.route("/api/stats", methods=["GET"])
+def get_stats():
+    """Calculates summary statistics from activity logs."""
+    total = 0
+    productive = 0
+    non_productive = 0
+    alerts = 0
+
+    if os.path.exists(STUDENT_ACTIVITY_LOG):
+        try:
+            with open(STUDENT_ACTIVITY_LOG, mode="r", encoding="utf-8") as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    total += 1
+                    cat = row.get("Category", "").strip()
+                    alt = row.get("Alert", "").strip().upper()
+                    if cat == "Productive":
+                        productive += 1
+                    elif cat == "Non-Productive":
+                        non_productive += 1
+                    if alt == "YES":
+                        alerts += 1
+        except Exception as e:
+            logger.error(f"Error reading activity log: {e}")
+
+    active_sender = os.environ.get("SMTP_SENDER_EMAIL", SENDER_EMAIL or "")
+    active_pwd = os.environ.get("SMTP_APP_PASSWORD", SENDER_PASSWORD or "")
+
+    return jsonify({
+        "total_visits": total,
+        "productive_count": productive,
+        "non_productive_count": non_productive,
+        "alerts_triggered": alerts,
+        "alert_threshold": ALERT_THRESHOLD,
+        "smtp_configured": bool(active_sender and active_pwd),
+        "sender_email": active_sender or "Not configured"
+    }), 200
+
+
+@app.route("/api/logs", methods=["GET"])
+def get_recent_logs():
+    """Returns the most recent activity logs."""
+    limit = int(request.args.get("limit", 25))
+    logs = []
+
+    if os.path.exists(STUDENT_ACTIVITY_LOG):
+        try:
+            with open(STUDENT_ACTIVITY_LOG, mode="r", encoding="utf-8") as f:
+                reader = list(csv.DictReader(f))
+                # Return most recent rows first
+                for row in reversed(reader[-limit:]):
+                    logs.append({
+                        "user_id": row.get("User_Id"),
+                        "timestamp": row.get("Timestamp(Start)"),
+                        "url": row.get("URL"),
+                        "category": row.get("Category"),
+                        "time_spent": row.get("TimeSpent(s)"),
+                        "alert": row.get("Alert"),
+                        "excess_time": row.get("ExcessTime(s)"),
+                        "email": row.get("E-mail")
+                    })
+        except Exception as e:
+            logger.error(f"Error fetching logs: {e}")
+
+    return jsonify({"count": len(logs), "logs": logs}), 200
+
+
+@app.route("/api/anomalies", methods=["GET"])
+def get_anomalies():
+    """Returns the latest anomaly detection calculations."""
+    anomalies = []
+    if os.path.exists(REAL_TIME_ANOMALIES_LOG):
+        try:
+            with open(REAL_TIME_ANOMALIES_LOG, mode="r", encoding="utf-8") as f:
+                reader = list(csv.DictReader(f))
+                anomalies = reader[-20:]
+        except Exception as e:
+            logger.error(f"Error reading anomalies: {e}")
+
+    return jsonify({"count": len(anomalies), "anomalies": anomalies}), 200
+
+
+@app.route("/api/test-email", methods=["POST"])
+def trigger_test_email():
+    """Sends a test email via SMTP to verify credentials and delivery."""
+    data = request.get_json(silent=True) or {}
+    recipient = data.get("email")
+
+    success, message = test_smtp_connection(test_recipient=recipient)
+    return jsonify({
+        "success": success,
+        "message": message
+    }), 200 if success else 400
+
+
+@app.route("/api/simulate", methods=["POST"])
+def trigger_simulation():
+    """Executes a quick batch simulation of sample student activity."""
+    try:
+        from data.sample.sample_urls import SAMPLE_BROWSING_ACTIVITY
+    except ImportError:
+        SAMPLE_BROWSING_ACTIVITY = [
+            (101, "https://www.github.com", 400, "dev@school.edu"),
+            (102, "https://www.instagram.com", 600, "student@school.edu"),
+            (103, "https://www.youtube.com/wwe", 450, "student@school.edu")
+        ]
+
+    batch = SAMPLE_BROWSING_ACTIVITY[:3]
+    results = []
+    for uid, url, time_s, em in batch:
+        res = log_visit(uid, url, time_s, em)
+        results.append(res)
+
+    return jsonify({
+        "message": f"Successfully simulated {len(results)} browsing visits!",
+        "records": results
     }), 200
 
 
@@ -102,7 +255,8 @@ def log_user_visit():
                 "category": record["category"],
                 "time_spent": record["time_spent"],
                 "alert": record["alert_status"],
-                "excess_time": record["excess_time"]
+                "excess_time": record["excess_time"],
+                "email": record["email"]
             }
         }), 200
 
@@ -113,6 +267,6 @@ def log_user_visit():
 
 if __name__ == "__main__":
     print("\n" + "=" * 60)
-    print(f" 🚀 BYOD API Server starting at http://{API_HOST}:{API_PORT}")
+    print(f" 🚀 BYOD Sentinel Server starting at http://{API_HOST}:{API_PORT}")
     print("=" * 60 + "\n")
     app.run(host=API_HOST, port=API_PORT, debug=API_DEBUG)

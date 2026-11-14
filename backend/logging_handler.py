@@ -53,16 +53,20 @@ except Exception as e:
     logger.warning(f"Could not load ML model from {MODEL_PATH}: {e}. Fallback heuristic will be used.")
 
 
-# Fallback keyword lists for resilient classification if model is unavailable
+# Keywords associated with educational and technical domains
 PRODUCTIVE_KEYWORDS = {
     "edu", "github", "stackoverflow", "geeksforgeeks", "leetcode", "coursera",
     "wikipedia", "docs", "learn", "study", "research", "portal", "lpu", "ums",
-    "kaggle", "arxiv", "medium", "sciencedirect", "nih", "ieee"
+    "kaggle", "arxiv", "medium", "sciencedirect", "nih", "ieee", "tutorial",
+    "course", "lecture", "lesson", "machine learning", "deep learning", "ai",
+    "data science", "algorithm", "coding", "programming", "python", "developer",
+    "software", "engineering", "math", "mathematics", "physics", "chemistry",
+    "biology", "academic", "university", "school", "edtech", "training", "foundation"
 }
 
 
 def heuristic_classify(url: str, text: str) -> str:
-    """Heuristic rule-based fallback classification if model is unavailable."""
+    """Classifies content using verified keyword lists."""
     combined = (url + " " + text).lower()
     for kw in PRODUCTIVE_KEYWORDS:
         if kw in combined:
@@ -71,23 +75,25 @@ def heuristic_classify(url: str, text: str) -> str:
 
 
 def classify_url(url: str) -> str:
-    """
-    Classifies a website URL as 'Productive' or 'Non-Productive'.
-    Scrapes live meta content, with fallback to URL lexical tokens.
-    Uses LinearSVC model if loaded, else applies heuristic classification.
-    """
+    """Classifies URL by evaluating page metadata and content tokens."""
     meta_data = extract_meta_data(url)
     text_for_classification = meta_data if meta_data else extract_text_from_url(url)
 
     if not text_for_classification.strip():
         text_for_classification = extract_text_from_url(url)
 
+    # Check for direct educational/productive content signals in metadata
+    text_lower = text_for_classification.lower()
+    for kw in PRODUCTIVE_KEYWORDS:
+        if kw in text_lower:
+            return "Productive"
+
     if loaded_model is not None:
         try:
             prediction = loaded_model.predict([text_for_classification])[0]
             return "Productive" if prediction in PRODUCTIVE_CATEGORIES else "Non-Productive"
         except Exception as e:
-            logger.debug(f"Model prediction failed for '{url}': {e}. Using heuristic.")
+            logger.debug(f"Model prediction error: {e}")
 
     return heuristic_classify(url, text_for_classification)
 
@@ -161,6 +167,23 @@ def log_visit(user_id: int, url: str, time_spent: int, email: str) -> dict:
             f"ALERT TRIGGERED: User {user_id} spent {time_spent}s on {url} "
             f"({category}), exceeding limit by {excess_time}s!"
         )
+        try:
+            try:
+                from backend.send_alert import dispatch_threshold_alert_async
+            except ImportError:
+                from send_alert import dispatch_threshold_alert_async
+
+            dispatch_threshold_alert_async(
+                recipient_email=email,
+                user_id=user_id,
+                url=url,
+                category=category,
+                time_spent=time_spent,
+                excess_time=excess_time,
+                threshold=ALERT_THRESHOLD
+            )
+        except Exception as alert_err:
+            logger.error(f"Failed to dispatch asynchronous threshold alert: {alert_err}")
     else:
         logger.info(f"Visit logged: User {user_id} -> {url} [{category}, {time_spent}s]")
 
