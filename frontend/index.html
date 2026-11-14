@@ -1,134 +1,91 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BYOD Sentinel | Intelligent Productivity & Anomaly Monitor</title>
-    <!-- Modern Typography & Icons -->
+    <title>BYOD Sentinel</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Top Navigation Bar -->
     <header class="navbar">
         <div class="nav-container">
             <div class="brand">
-                <div class="brand-icon">🛡️</div>
-                <div class="brand-text">
-                    <span class="brand-title">BYOD Sentinel</span>
-                    <span class="brand-subtitle">AI Productivity & Anomaly Detection</span>
-                </div>
-            </div>
-
-            <div class="system-status">
-                <div class="status-pill" id="apiStatusPill">
-                    <span class="status-dot"></span>
-                    <span id="apiStatusText">Checking Server...</span>
-                </div>
-                <div class="status-pill" id="smtpStatusPill">
-                    <span class="status-dot"></span>
-                    <span id="smtpStatusText">Checking SMTP...</span>
-                </div>
+                <span class="brand-icon">🛡️</span>
+                <span class="brand-title">BYOD Sentinel</span>
             </div>
 
             <div class="nav-actions">
-                <button class="btn btn-secondary btn-sm" id="btnOpenTestEmail">
-                    <span>✉️</span> Test SMTP Email
+                <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <span class="theme-icon" id="themeIcon">☀️</span>
                 </button>
-                <button class="btn btn-primary btn-sm" id="btnQuickSimulate">
-                    <span>⚡</span> Run Simulation
+                <button class="btn btn-secondary btn-sm" id="btnQuickSimulate">
+                    <span>⚡</span> Simulate
                 </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content Container -->
     <main class="main-layout">
-        
-        <!-- Metrics / KPI Banner -->
+        <!-- Minimal Metrics Overview -->
         <section class="metrics-grid">
             <div class="metric-card">
-                <div class="metric-header">
-                    <span class="metric-title">Total Monitored Visits</span>
-                    <span class="metric-icon">📊</span>
-                </div>
+                <div class="metric-title">Total Visits</div>
                 <div class="metric-value" id="kpiTotalVisits">--</div>
-                <div class="metric-footer" id="kpiVisitsSubtext">Awaiting server sync</div>
             </div>
 
             <div class="metric-card">
-                <div class="metric-header">
-                    <span class="metric-title">Productive vs Distraction</span>
-                    <span class="metric-icon">🎯</span>
-                </div>
+                <div class="metric-title">Productive Ratio</div>
                 <div class="metric-value" id="kpiProductivityRatio">--%</div>
                 <div class="progress-bar-container">
                     <div class="progress-bar-fill" id="productivityProgressBar" style="width: 0%;"></div>
                 </div>
-                <div class="metric-footer" id="kpiRatioSubtext">0 Productive / 0 Distractions</div>
-            </div>
-
-            <div class="metric-card alert-card">
-                <div class="metric-header">
-                    <span class="metric-title">Policy Alerts Dispatched</span>
-                    <span class="metric-icon">⚠️</span>
-                </div>
-                <div class="metric-value alert-text" id="kpiTotalAlerts">--</div>
-                <div class="metric-footer">Exceeded 300s non-productive limit</div>
             </div>
 
             <div class="metric-card">
-                <div class="metric-header">
-                    <span class="metric-title">Active Security Policy</span>
-                    <span class="metric-icon">⏱️</span>
-                </div>
-                <div class="metric-value policy-value" id="kpiPolicyThreshold">300s</div>
-                <div class="metric-footer">Auto-dispatches TLS SMTP alert</div>
+                <div class="metric-title">Alerts Flagged</div>
+                <div class="metric-value alert-text" id="kpiTotalAlerts">--</div>
             </div>
         </section>
 
         <!-- Two-Column Workspace -->
         <div class="dashboard-columns">
-            
-            <!-- Left Column: Ingestion Engine Form -->
+            <!-- Left: Log Form -->
             <div class="column-left">
-                <div class="card glass-card">
+                <div class="card">
                     <div class="card-header">
-                        <h2>Log Student Session</h2>
-                        <p class="card-desc">Evaluate URL with LinearSVC NLP pipeline and monitor policy limits</p>
+                        <h2>Log Browsing Session</h2>
                     </div>
 
-                    <!-- Quick Testing Presets -->
+                    <!-- Presets -->
                     <div class="presets-section">
-                        <span class="preset-label">Quick Test Presets:</span>
                         <div class="presets-wrapper">
                             <button type="button" class="preset-chip chip-alert" data-user="101" data-url="https://www.youtube.com/wwe" data-time="450" data-email="try.nitinchahar@gmail.com">
-                                🔴 YouTube: WWE (450s &bull; Alert)
+                                🔴 YouTube: WWE (Alert)
                             </button>
                             <button type="button" class="preset-chip chip-alert" data-user="102" data-url="https://www.instagram.com" data-time="600" data-email="try.nitinchahar@gmail.com">
-                                🔴 Instagram (600s &bull; Alert)
+                                🔴 Instagram (Alert)
                             </button>
                             <button type="button" class="preset-chip chip-prod" data-user="103" data-url="https://www.youtube.com/watch?v=1L420xXpDTg" data-time="500" data-email="try.nitinchahar@gmail.com">
                                 🟢 YouTube: ML Course (Productive)
                             </button>
                             <button type="button" class="preset-chip chip-prod" data-user="104" data-url="https://www.github.com" data-time="300" data-email="try.nitinchahar@gmail.com">
-                                🟢 GitHub (300s &bull; Normal)
+                                🟢 GitHub (Productive)
                             </button>
                         </div>
                     </div>
 
-                    <!-- Main Form -->
                     <form id="logForm">
                         <div class="form-row">
                             <div class="form-group flex-1">
-                                <label for="user_id">Student / User ID</label>
-                                <input type="number" id="user_id" placeholder="e.g. 101" required min="1" value="101">
+                                <label for="user_id">User ID</label>
+                                <input type="number" id="user_id" placeholder="101" required min="1" value="101">
                             </div>
                             <div class="form-group flex-1">
-                                <label for="time_spent">Duration (Seconds)</label>
-                                <input type="number" id="time_spent" placeholder="e.g. 450" required min="1" value="450">
+                                <label for="time_spent">Time Spent (Seconds)</label>
+                                <input type="number" id="time_spent" placeholder="450" required min="1" value="450">
                             </div>
                         </div>
 
@@ -138,111 +95,62 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="email">Alert Notification Email</label>
+                            <label for="email">Alert Email</label>
                             <input type="email" id="email" placeholder="student@university.edu" required value="try.nitinchahar@gmail.com">
-                            <small class="form-hint">Alert emails are sent here and CC'd to configured administrator.</small>
                         </div>
 
                         <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
-                            <span id="btnText">Log Activity & Run Detection</span>
+                            <span id="btnText">Log Visit</span>
                             <span id="btnSpinner" class="spinner" style="display: none;"></span>
                         </button>
                     </form>
 
-                    <!-- Submission Feedback Box -->
                     <div id="responseMessage" class="response-box" style="display: none;"></div>
-                </div>
-
-                <!-- Email Setup Explainer Card -->
-                <div class="card glass-card info-card">
-                    <div class="info-header">
-                        <span class="info-icon">💡</span>
-                        <h3>How Email Alerts Work</h3>
-                    </div>
-                    <ul class="info-list">
-                        <li><strong>Instant Threshold Alert:</strong> Triggered immediately if duration on any <em>Non-Productive</em> website exceeds 300s (5 min). Dispatched asynchronously via SMTP.</li>
-                        <li><strong>Behavioral ML Anomaly:</strong> Detected by <em>Isolation Forest</em> and <em>Z-Score</em> when student rapidly switches tasks or exhibits statistical outlier durations.</li>
-                    </ul>
                 </div>
             </div>
 
-            <!-- Right Column: Live Stream & Anomaly Monitor -->
+            <!-- Right: Activity Feed -->
             <div class="column-right">
-                <div class="card glass-card stream-card">
+                <div class="card stream-card">
                     <div class="stream-header">
-                        <div class="stream-title-group">
-                            <h2>Live Activity Stream</h2>
-                            <span class="live-indicator"><span class="pulse-dot"></span> Live Feed</span>
-                        </div>
-
+                        <h2>Activity Stream</h2>
                         <div class="tab-filters">
                             <button class="tab-btn active" data-filter="all">All</button>
-                            <button class="tab-btn" data-filter="alerts">Alerts (⚠️)</button>
+                            <button class="tab-btn" data-filter="alerts">Alerts</button>
                             <button class="tab-btn" data-filter="productive">Productive</button>
                             <button class="tab-btn" data-filter="anomalies">Anomalies</button>
                         </div>
                     </div>
 
-                    <!-- Logs Table Container -->
-                    <div class="table-wrapper" id="logsTableContainer">
+                    <div class="table-wrapper">
                         <table class="data-table">
                             <thead>
                                 <tr>
                                     <th>User</th>
-                                    <th>Destination URL</th>
-                                    <th>Classification</th>
+                                    <th>URL</th>
+                                    <th>Category</th>
                                     <th>Duration</th>
                                     <th>Status</th>
                                 </tr>
                             </thead>
                             <tbody id="logsTableBody">
                                 <tr>
-                                    <td colspan="5" class="table-empty">Loading activity stream...</td>
+                                    <td colspan="5" class="table-empty">Loading records...</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
                     <div class="stream-footer">
-                        <span id="logsCountText">Showing 0 entries</span>
-                        <button class="btn btn-ghost btn-xs" id="btnRefreshLogs">↻ Refresh Feed</button>
+                        <span id="logsCountText">0 entries</span>
+                        <button class="btn btn-ghost btn-xs" id="btnRefreshLogs">↻ Refresh</button>
                     </div>
                 </div>
             </div>
-
         </div>
     </main>
 
-    <!-- Modal for Testing SMTP Email Connection -->
-    <div class="modal-overlay" id="emailModal" style="display: none;">
-        <div class="modal-content glass-card">
-            <div class="modal-header">
-                <h3>Test SMTP Email Alert Dispatcher</h3>
-                <button class="btn-close" id="btnCloseEmailModal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p class="modal-desc">
-                    Send a test TLS email using the configured SMTP sender account in your <code>.env</code> file.
-                </p>
-                <div class="form-group">
-                    <label for="testEmailRecipient">Recipient Email Address</label>
-                    <input type="email" id="testEmailRecipient" placeholder="try.nitinchahar@gmail.com" value="try.nitinchahar@gmail.com">
-                </div>
-                <div id="testEmailFeedback" class="test-email-feedback" style="display: none;"></div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="btnCancelEmailModal">Cancel</button>
-                <button class="btn btn-primary" id="btnExecuteTestEmail">
-                    <span id="testEmailBtnText">Send Test Email</span>
-                    <span id="testEmailSpinner" class="spinner" style="display: none;"></span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Toast Notifications -->
     <div class="toast-container" id="toastContainer"></div>
-
     <script src="app.js"></script>
 </body>
 </html>
