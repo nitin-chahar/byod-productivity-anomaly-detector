@@ -252,6 +252,21 @@ btnRefreshLogs.addEventListener("click", async () => {
     showToast("Refreshed");
 });
 
+const btnClearLogs = document.getElementById("btnClearLogs");
+if (btnClearLogs) {
+    btnClearLogs.addEventListener("click", async () => {
+        if (!confirm("Are you sure you want to clear all activity logs?")) return;
+        try {
+            const res = await fetch(`${API_BASE}/api/clear-logs`, { method: "POST" });
+            const data = await res.json();
+            showToast(data.message || "All activity logs cleared");
+            await Promise.all([fetchStats(), fetchLogs(), fetchAnomalies()]);
+        } catch (e) {
+            showToast("Failed to clear logs");
+        }
+    });
+}
+
 btnQuickSimulate.addEventListener("click", async () => {
     try {
         const res = await fetch(`${API_BASE}/api/simulate`, { method: "POST" });

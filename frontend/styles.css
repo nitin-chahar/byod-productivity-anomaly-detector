@@ -193,6 +193,8 @@ body {
 }
 .btn-ghost:hover { background: var(--bg-card-subtle); color: var(--text-primary); }
 .btn-ghost.btn-pill { padding: 12px 26px; font-size: 15px; }
+.btn-ghost.text-danger { color: var(--danger); }
+.btn-ghost.text-danger:hover { background: var(--danger-subtle); border-color: var(--danger-border); color: var(--danger); }
 
 /* Layout */
 .main-layout {

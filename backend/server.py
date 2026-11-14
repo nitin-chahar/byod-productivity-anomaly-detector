@@ -168,6 +168,38 @@ def get_anomalies():
     return jsonify({"count": len(anomalies), "anomalies": anomalies}), 200
 
 
+@app.route("/api/clear-logs", methods=["POST"])
+def clear_activity_logs():
+    """Resets activity logs and anomalies to empty state."""
+    try:
+        from backend.logging_handler import log_lock
+    except ImportError:
+        from logging_handler import log_lock
+
+    with log_lock:
+        try:
+            with open(STUDENT_ACTIVITY_LOG, mode="w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerow([
+                    "User_Id", "Timestamp(Start)", "URL", "Category",
+                    "TimeSpent(s)", "Alert", "TimeStamp(End)", "ExcessTime(s)", "E-mail"
+                ])
+
+            if os.path.exists(REAL_TIME_ANOMALIES_LOG):
+                with open(REAL_TIME_ANOMALIES_LOG, mode="w", newline="", encoding="utf-8") as f:
+                    writer = csv.writer(f)
+                    writer.writerow([
+                        "User_Id", "Total_Websites", "Productive_Count", "Non_Productive_Count",
+                        "Session_Duration", "E_mail", "Switches", "Anomaly_Score",
+                        "Anomaly", "Z_Score", "Z_Anomaly", "Total_Alerts"
+                    ])
+
+            return jsonify({"message": "All activity logs cleared successfully"}), 200
+        except Exception as e:
+            logger.error(f"Failed to clear logs: {e}")
+            return jsonify({"error": f"Failed to clear logs: {e}"}), 500
+
+
 @app.route("/api/test-email", methods=["POST"])
 def trigger_test_email():
     """Sends a test email via SMTP to verify credentials and delivery."""
