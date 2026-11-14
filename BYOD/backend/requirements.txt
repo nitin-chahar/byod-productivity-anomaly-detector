@@ -1,8 +1,0 @@
-requests
-beautifulsoup4
-watchdog
-scikit-learn
-pandas
-scipy
-flask
-flask-cors

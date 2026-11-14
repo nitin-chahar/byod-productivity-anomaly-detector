@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: byod-productivity-monitor
+    env: docker
+    plan: free
+    region: oregon
+    dockerfilePath: Dockerfile
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: ALERT_THRESHOLD
+        value: 300
+      - key: SWITCH_THRESHOLD
+        value: 120
+      - key: IF_CONTAMINATION
+        value: 0.05
+      - key: Z_SCORE_THRESHOLD
+        value: 3.0
+      - key: SMTP_SERVER
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: SMTP_SENDER_EMAIL
+        sync: false
+      - key: SMTP_APP_PASSWORD
+        sync: false
