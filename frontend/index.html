@@ -6,14 +6,20 @@
     <title>BYOD Sentinel</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <header class="navbar">
-        <div class="nav-container">
+        <nav class="nav-container" aria-label="Main">
+            <div class="nav-links">
+                <a href="#overview">Overview</a>
+                <a href="#logSection">Log visit</a>
+                <a href="#activity">Activity</a>
+            </div>
+
             <div class="brand">
-                <span class="brand-icon">🛡️</span>
+                <span class="brand-icon" aria-hidden="true">🛡️</span>
                 <span class="brand-title">BYOD Sentinel</span>
             </div>
 
@@ -21,45 +27,62 @@
                 <button type="button" class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
                     <span class="theme-icon" id="themeIcon">☀️</span>
                 </button>
-                <button class="btn btn-secondary btn-sm" id="btnQuickSimulate">
-                    <span>⚡</span> Simulate
+                <button type="button" class="btn btn-secondary btn-sm" id="btnQuickSimulate">
+                    <span aria-hidden="true">⚡</span> Simulate
                 </button>
             </div>
-        </div>
+        </nav>
     </header>
 
     <main class="main-layout">
-        <!-- Minimal Metrics Overview -->
-        <section class="metrics-grid">
-            <div class="metric-card">
-                <div class="metric-title">Total Visits</div>
-                <div class="metric-value" id="kpiTotalVisits">--</div>
-            </div>
+        <!-- Hero + gauges -->
+        <section class="hero" id="overview">
+            <svg class="cloud cloud-a" viewBox="0 0 260 170" aria-hidden="true"><path d="M10 160 H170 C200 160 205 120 180 108 C190 70 150 55 128 72 C112 40 62 52 66 92 C30 90 20 140 10 160Z"/></svg>
+            <svg class="cloud cloud-b" viewBox="0 0 260 170" aria-hidden="true"><path d="M10 160 H170 C200 160 205 120 180 108 C190 70 150 55 128 72 C112 40 62 52 66 92 C30 90 20 140 10 160Z"/></svg>
 
-            <div class="metric-card">
-                <div class="metric-title">Productive Ratio</div>
-                <div class="metric-value" id="kpiProductivityRatio">--%</div>
-                <div class="progress-bar-container">
-                    <div class="progress-bar-fill" id="productivityProgressBar" style="width: 0%;"></div>
+            <div class="hero-copy">
+                <h1>Browsing activity,<br>under control</h1>
+                <p>Log visits from student devices, see which ones run past the time limit, and spot unusual tab-switching in one place.</p>
+                <div class="hero-actions">
+                    <a href="#logSection" class="btn btn-primary btn-pill">Log a visit</a>
+                    <a href="#activity" class="btn btn-ghost btn-pill">View activity</a>
                 </div>
             </div>
 
-            <div class="metric-card">
-                <div class="metric-title">Alerts Flagged</div>
-                <div class="metric-value alert-text" id="kpiTotalAlerts">--</div>
+            <div class="hero-gauges metrics-grid" aria-live="polite">
+                <div class="gauge gauge-plain">
+                    <div class="gauge-inner">
+                        <div class="metric-value" id="kpiTotalVisits">--</div>
+                        <div class="metric-title">Total visits</div>
+                    </div>
+                </div>
+
+                <div class="gauge gauge-ring" id="productivityRing" style="--p:0;">
+                    <div class="gauge-inner">
+                        <div class="metric-value" id="kpiProductivityRatio">--%</div>
+                        <div class="metric-title">Productive</div>
+                    </div>
+                </div>
+
+                <div class="gauge gauge-ring gauge-warm" id="alertRing" style="--p:0;">
+                    <div class="gauge-inner">
+                        <div class="metric-value alert-text" id="kpiTotalAlerts">--</div>
+                        <div class="metric-title">Alerts</div>
+                    </div>
+                </div>
             </div>
         </section>
 
         <!-- Two-Column Workspace -->
         <div class="dashboard-columns">
             <!-- Left: Log Form -->
-            <div class="column-left">
+            <div class="column-left" id="logSection">
                 <div class="card">
                     <div class="card-header">
-                        <h2>Log Browsing Session</h2>
+                        <h2>Log a browsing session</h2>
+                        <p class="card-sub">Pick a preset or fill in the details.</p>
                     </div>
 
-                    <!-- Presets -->
                     <div class="presets-section">
                         <div class="presets-wrapper">
                             <button type="button" class="preset-chip chip-alert" data-user="101" data-url="https://www.youtube.com/wwe" data-time="450" data-email="try.nitinchahar@gmail.com">
@@ -69,10 +92,10 @@
                                 🔴 Instagram (Alert)
                             </button>
                             <button type="button" class="preset-chip chip-prod" data-user="103" data-url="https://www.youtube.com/watch?v=1L420xXpDTg" data-time="500" data-email="try.nitinchahar@gmail.com">
-                                🟢 YouTube: ML Course (Productive)
+                                🟣 YouTube: ML Course (Productive)
                             </button>
                             <button type="button" class="preset-chip chip-prod" data-user="104" data-url="https://www.github.com" data-time="300" data-email="try.nitinchahar@gmail.com">
-                                🟢 GitHub (Productive)
+                                🟣 GitHub (Productive)
                             </button>
                         </div>
                     </div>
@@ -84,7 +107,7 @@
                                 <input type="number" id="user_id" placeholder="101" required min="1" value="101">
                             </div>
                             <div class="form-group flex-1">
-                                <label for="time_spent">Time Spent (Seconds)</label>
+                                <label for="time_spent">Time spent (seconds)</label>
                                 <input type="number" id="time_spent" placeholder="450" required min="1" value="450">
                             </div>
                         </div>
@@ -95,25 +118,25 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="email">Alert Email</label>
+                            <label for="email">Alert email</label>
                             <input type="email" id="email" placeholder="student@university.edu" required value="try.nitinchahar@gmail.com">
                         </div>
 
-                        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+                        <button type="submit" class="btn btn-primary btn-block btn-pill" id="submitBtn">
                             <span id="btnText">Log Visit</span>
                             <span id="btnSpinner" class="spinner" style="display: none;"></span>
                         </button>
                     </form>
 
-                    <div id="responseMessage" class="response-box" style="display: none;"></div>
+                    <div id="responseMessage" class="response-box" style="display: none;" role="status" aria-live="polite"></div>
                 </div>
             </div>
 
             <!-- Right: Activity Feed -->
-            <div class="column-right">
+            <div class="column-right" id="activity">
                 <div class="card stream-card">
                     <div class="stream-header">
-                        <h2>Activity Stream</h2>
+                        <h2>Activity stream</h2>
                         <div class="tab-filters">
                             <button class="tab-btn active" data-filter="all">All</button>
                             <button class="tab-btn" data-filter="alerts">Alerts</button>
@@ -150,7 +173,7 @@
         </div>
     </main>
 
-    <div class="toast-container" id="toastContainer"></div>
+    <div class="toast-container" id="toastContainer" aria-live="polite"></div>
     <script src="app.js"></script>
 </body>
 </html>

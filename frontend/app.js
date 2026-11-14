@@ -17,7 +17,8 @@ const responseBox = document.getElementById("responseMessage");
 
 const kpiTotalVisits = document.getElementById("kpiTotalVisits");
 const kpiProductivityRatio = document.getElementById("kpiProductivityRatio");
-const productivityProgressBar = document.getElementById("productivityProgressBar");
+const productivityRing = document.getElementById("productivityRing");
+const alertRing = document.getElementById("alertRing");
 const kpiTotalAlerts = document.getElementById("kpiTotalAlerts");
 const logsTableBody = document.getElementById("logsTableBody");
 const logsCountText = document.getElementById("logsCountText");
@@ -44,6 +45,11 @@ themeToggle.addEventListener("click", () => {
     themeIcon.textContent = next === "dark" ? "☀️" : "🌙";
 });
 
+// Escape values before putting them in innerHTML
+function esc(v) {
+    return String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
 // Toast
 function showToast(message) {
     const toast = document.createElement("div");
@@ -69,7 +75,9 @@ async function fetchStats() {
         const total = stats.productive_count + stats.non_productive_count;
         const ratio = total > 0 ? Math.round((stats.productive_count / total) * 100) : 0;
         kpiProductivityRatio.textContent = `${ratio}%`;
-        productivityProgressBar.style.width = `${ratio}%`;
+        productivityRing.style.setProperty("--p", ratio);
+        const alertPct = stats.total_visits > 0 ? Math.min(100, Math.round((stats.alerts_triggered / stats.total_visits) * 100)) : 0;
+        alertRing.style.setProperty("--p", alertPct);
     } catch (e) {
         // silent fail for telemetry
     }
@@ -117,13 +125,14 @@ function renderTable() {
     logsTableBody.innerHTML = filtered.map(row => {
         const isProd = row.category === "Productive";
         const hasAlert = row.alert === "YES";
-        const cleanUrl = row.url ? row.url.replace(/^https?:\/\//, '') : 'N/A';
+        const cleanUrl = row.url ? esc(row.url.replace(/^https?:\/\//, '')) : 'N/A';
+        const safeUrl = esc(row.url);
 
         return `
             <tr>
                 <td><span class="user-badge">#${row.user_id || '?'}</span></td>
-                <td class="url-cell" title="${row.url}">
-                    <a href="${row.url}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>
+                <td class="url-cell" title="${safeUrl}">
+                    <a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${cleanUrl}</a>
                 </td>
                 <td>
                     <span class="tag ${isProd ? 'tag-prod' : 'tag-danger'}">
@@ -155,7 +164,7 @@ function renderAnomalies() {
         return `
             <tr>
                 <td><span class="user-badge">#${row.User_Id || '?'}</span></td>
-                <td>${row.E_mail || 'N/A'}</td>
+                <td>${esc(row.E_mail || 'N/A')}</td>
                 <td>Switches: ${row.Switches || 0}</td>
                 <td>${row.Session_Duration || 0}s</td>
                 <td>
